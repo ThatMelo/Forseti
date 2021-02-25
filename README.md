@@ -1,0 +1,2 @@
+# Forseti
+A Discord Bot
