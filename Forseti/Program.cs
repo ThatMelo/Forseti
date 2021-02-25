@@ -1,12 +1,7 @@
-﻿using System;
-
-namespace Forseti
+﻿namespace Forseti
 {
-    class Program
+    public class Program
     {
-        static void Main(string[] args)
-        {
-            Console.WriteLine("Hello World!");
-        }
+        static void Main() => new BotManager().Start().GetAwaiter().GetResult();
     }
 }
