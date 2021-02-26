@@ -6,6 +6,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
+using ProfanityFilter;
 
 namespace Forseti.Commands
 {
@@ -152,16 +153,28 @@ namespace Forseti.Commands
             }
 
             // Softer, don't delete
-            clearedContent = Regex.Replace(m.Content.ToLower(), "[^a-z]", string.Empty);
-            foreach (var b in BadWords)
+
+            //clearedContent = Regex.Replace(m.Content.ToLower(), "[^a-z]", string.Empty);
+            //foreach (var b in BadWords)
+            //{
+            //    if (clearedContent.Contains(b.Replace(" ", "")))
+            //    {
+            //        e.AddField("Flagged", b, true);
+            //        e.AddField("Auto-Deleted", "No", true);
+            //        await CreateModCard(e);
+            //        return;
+            //    }
+            //}
+
+            var filter = new ProfanityFilter.ProfanityFilter();
+            filter.AddProfanity("bird");
+            var list = filter.DetectAllProfanities(m.Content);
+            if (list.Count > 0)
             {
-                if (clearedContent.Contains(b.Replace(" ", "")))
-                {
-                    e.AddField("Flagged", b, true);
-                    e.AddField("Auto-Deleted", "No", true);
-                    await CreateModCard(e);
-                    return;
-                }
+                e.AddField("Flagged", string.Join(", ", list), true);
+                e.AddField("Auto-Deleted", "No", true);
+                await CreateModCard(e);
+                return;
             }
         }
 
