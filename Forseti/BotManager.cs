@@ -18,15 +18,14 @@ namespace Forseti
 
         public async Task Start()
         {
-            Logger = new LoggingService();
-
             Config = Config.Load(@"C:\Forseti\config.json");
+            Logger = new LoggingService();
             Client = new DiscordSocketClient(new DiscordSocketConfig()
             {
                 AlwaysDownloadUsers = true,
                 DefaultRetryMode = RetryMode.AlwaysRetry,
                 LargeThreshold = 250,
-                LogLevel = LogSeverity.Debug,
+                LogLevel = LogSeverity.Warning,
                 RateLimitPrecision = RateLimitPrecision.Millisecond,
             });
 
@@ -35,11 +34,12 @@ namespace Forseti
                 CaseSensitiveCommands = false,
                 DefaultRunMode = RunMode.Sync,
                 IgnoreExtraArgs = true,
-                LogLevel = LogSeverity.Debug,
+                LogLevel = LogSeverity.Warning,
                 SeparatorChar = ' ',
                 ThrowOnError = false,
             });
 
+            Commands.Log += Logger.Client_Log;
             Client.Log += Logger.Client_Log;
             Client.MessageReceived += HandleCommands;
             Client.Ready += Client_Ready;

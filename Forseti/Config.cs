@@ -9,8 +9,8 @@ namespace Forseti
     {
         [JsonProperty("token")]
         public string Token;
-        [JsonProperty("mod-logs")]
-        public ulong ModLogsID;
+        [JsonProperty("errorsWebhook")]
+        public string ErrorWebhookUrl;
 
         public static Config Load(string filePath) => 
             JsonConvert.DeserializeObject<Config>(File.ReadAllText(filePath));

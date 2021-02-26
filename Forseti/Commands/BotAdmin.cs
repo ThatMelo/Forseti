@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -13,14 +14,21 @@ namespace Forseti.Commands
             await ReplyAsync("Pong! " + Context.Client.Latency + "ms");
         }
 
-        [Command("gotobed")]
-        [Alias("stop")]
+        [Command("stop")]
         [RequireOwner]
-        public async Task GotToBed()
+        public async Task Stop()
         {
             await Context.Message.AddReactionAsync(new Emoji("👌"));
             await BotManager.Instance.Client.StopAsync();
             Environment.Exit(0);
+        }
+
+        [Command("testerror")]
+        [RequireOwner]
+        public async Task TestError()
+        {
+            Console.WriteLine("Throwing Test Error");
+            throw new Exception("Test Error!");
         }
     }
 }
