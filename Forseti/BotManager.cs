@@ -1,4 +1,5 @@
-﻿using System.Reflection;
+﻿using System;
+using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -18,7 +19,7 @@ namespace Forseti
 
         public async Task Start()
         {
-            Config = Config.Load(@"C:\Forseti\config.json");
+            Config = Config.Load(Config.Path + "config.json");
             Logger = new LoggingService();
             Client = new DiscordSocketClient(new DiscordSocketConfig()
             {
@@ -58,16 +59,28 @@ namespace Forseti
             var argPos = 0;
 
             // Make sure it's prefixed (with ! or bot mention), and that caller isn't a bot
-            if (!(msg.HasCharPrefix('!', ref argPos) || 
+            if (!(msg.HasStringPrefix(Config.Prefix, ref argPos) || 
                 msg.HasMentionPrefix(Client.CurrentUser, ref argPos)) || msg.Author.IsBot) { return; }
 
+            var commandLog = Client.GetChannel(814970218555768882) as SocketTextChannel;
+            var mC = $"{DateTimeOffset.UtcNow} > {arg.Author.Username}#{arg.Author.Discriminator} > `{arg.Content}` - <#{arg.Channel.Id}>";
+            var m = await commandLog.SendMessageAsync(mC);
+
             var context = new SocketCommandContext(Client, msg);
-            await Commands.ExecuteAsync(context, argPos, null);
+            var result = await Commands.ExecuteAsync(context, argPos, null);
+
+            await m.ModifyAsync(m2 => m2.Content = result.IsSuccess ? "✅ " + mC : "❌ " + mC);
         }
 
         private async Task Client_Ready()
         {
-
+            var botTesting = Client.GetChannel(814330280969895936) as SocketTextChannel;
+            var e = new EmbedBuilder()
+                .WithAuthor(Client.CurrentUser)
+                .WithTitle("Bot Ready!")
+                .WithCurrentTimestamp()
+                .WithColor(Color.Teal);
+            await botTesting.SendMessageAsync(embed: e.Build());
         }
     }
 }

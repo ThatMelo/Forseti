@@ -1,5 +1,5 @@
 ﻿using System;
-using System.Text.RegularExpressions;
+using System.Diagnostics;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -14,12 +14,21 @@ namespace Forseti.Commands
             await ReplyAsync("Pong! " + Context.Client.Latency + "ms");
         }
 
-        [Command("stop")]
+        [Command("restart")]
         [RequireOwner]
-        public async Task Stop()
+        public async Task Restart(bool update = true)
         {
             await Context.Message.AddReactionAsync(new Emoji("👌"));
             await BotManager.Instance.Client.StopAsync();
+
+            if (!Config.Debug && update)
+            {
+                Process.Start("update.bat");
+            }
+            else if (!Config.Debug && !update)
+            {
+                Process.Start("restart.bat");
+            }
             Environment.Exit(0);
         }
 

@@ -6,13 +6,12 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using ProfanityFilter;
 
 namespace Forseti.Commands
 {
     public class Moderation : ModuleBase<SocketCommandContext>
     {
-        static string[] BadWords = File.ReadAllText(@"C:\Forseti\badwords.txt").Replace("\r", "").Split('\n');
+        static string[] BadWords = File.ReadAllText(Config.Path + "badwords.txt").Replace("\r", "").Split('\n');
 
         static SocketTextChannel ModLogs => BotManager.Instance.Client.GetChannel(814327531216961616) as SocketTextChannel;
         static SocketTextChannel General => BotManager.Instance.Client.GetChannel(814328175881355304) as SocketTextChannel;
@@ -21,19 +20,22 @@ namespace Forseti.Commands
 
         static Moderation()
         {
-            BotManager.Instance.Client.MessageReceived += async (msg) => { if (msg is SocketUserMessage msg2) { await CheckMessage(msg2); } };
-            BotManager.Instance.Client.MessageUpdated += async (a, msg, c) => { if (msg is SocketUserMessage msg2) { await CheckMessage(msg2); } };
-            BotManager.Instance.Client.UserBanned += async (usr, guild) => await ModLogs.SendMessageAsync($"{usr.Mention} ({usr.Id}) has been banned.");
-            BotManager.Instance.Client.UserUnbanned += async (usr, guild) => await ModLogs.SendMessageAsync($"{usr.Mention} ({usr.Id}) has been unbanned.");
-            BotManager.Instance.Client.UserLeft += async (usr) => await ModLogs.SendMessageAsync($"{usr.Mention} has left or was kicked.");
-
-            BotManager.Instance.Client.UserJoined += async (usr) =>
+            if (!Config.Debug)
             {
-                await usr.AddRoleAsync(usr.Guild.Roles.First(r => r.Name == "Member"));
-                await General.SendMessageAsync($"Welcome to the server, {usr.Mention}! Please make sure to read through <#814326414618132521>.");
-            };
+                BotManager.Instance.Client.MessageReceived += async (msg) => { if (msg is SocketUserMessage msg2) { await CheckMessage(msg2); } };
+                BotManager.Instance.Client.MessageUpdated += async (a, msg, c) => { if (msg is SocketUserMessage msg2) { await CheckMessage(msg2); } };
+                BotManager.Instance.Client.UserBanned += async (usr, guild) => await ModLogs.SendMessageAsync($"{usr.Mention} ({usr.Id}) has been banned.");
+                BotManager.Instance.Client.UserUnbanned += async (usr, guild) => await ModLogs.SendMessageAsync($"{usr.Mention} ({usr.Id}) has been unbanned.");
+                BotManager.Instance.Client.UserLeft += async (usr) => await ModLogs.SendMessageAsync($"{usr.Mention} has left or was kicked.");
 
-            BotManager.Instance.Client.ReactionAdded += Client_ReactionAdded;
+                BotManager.Instance.Client.UserJoined += async (usr) =>
+                {
+                    await usr.AddRoleAsync(usr.Guild.Roles.First(r => r.Name == "Member"));
+                    await General.SendMessageAsync($"Welcome to the server, {usr.Mention}! Please make sure to read through <#814326414618132521>.");
+                };
+
+                BotManager.Instance.Client.ReactionAdded += Client_ReactionAdded;
+            }
         }
 
         private static async Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> cMsg, ISocketMessageChannel ch, SocketReaction r)
@@ -59,12 +61,12 @@ namespace Forseti.Commands
                 });
             }
 
-            async Task<(SocketGuildChannel channel, IMessage message)> GetInfo(string url)
+            static async Task<(SocketGuildChannel channel, IMessage message)> GetInfo(string url)
             {
                 var parts = url.Replace(")", "").Split('/');
                 Console.WriteLine(string.Join(" | ", parts));
-                var messageId = ulong.Parse(parts[parts.Length - 1]);
-                var channelId = ulong.Parse(parts[parts.Length - 2]);
+                var messageId = ulong.Parse(parts[^1]);
+                var channelId = ulong.Parse(parts[^2]);
 
                 var channel = BotManager.Instance.Client.GetChannel(channelId) as SocketGuildChannel;
                 var message = await (channel as ITextChannel).GetMessageAsync(messageId);
@@ -152,22 +154,8 @@ namespace Forseti.Commands
                 }
             }
 
-            // Softer, don't delete
-
-            //clearedContent = Regex.Replace(m.Content.ToLower(), "[^a-z]", string.Empty);
-            //foreach (var b in BadWords)
-            //{
-            //    if (clearedContent.Contains(b.Replace(" ", "")))
-            //    {
-            //        e.AddField("Flagged", b, true);
-            //        e.AddField("Auto-Deleted", "No", true);
-            //        await CreateModCard(e);
-            //        return;
-            //    }
-            //}
-
+            // Softer, don't auto-delete
             var filter = new ProfanityFilter.ProfanityFilter();
-            filter.AddProfanity("bird");
             var list = filter.DetectAllProfanities(m.Content);
             if (list.Count > 0)
             {
@@ -189,6 +177,7 @@ namespace Forseti.Commands
 
         [Command("kick")]
         [RequireRole("staff")]
+        [RequireProduction]
         public async Task Kick(SocketGuildUser user, [Remainder]string reason = "violating the rules")
         {
             reason = reason.EndsWith(".") ? reason : reason + ".";
@@ -200,6 +189,7 @@ namespace Forseti.Commands
 
         [Command("ban")]
         [RequireRole("staff")]
+        [RequireProduction]
         public async Task Ban(SocketGuildUser user, [Remainder]string reason = "violating the rules")
         {
             reason = reason.EndsWith(".") ? reason : reason + ".";
@@ -211,6 +201,7 @@ namespace Forseti.Commands
         [Command("unban")]
         [Alias("pardon")]
         [RequireRole("staff")]
+        [RequireProduction]
         public async Task Unban(ulong user)
         {
             await Context.Guild.RemoveBanAsync(user);
@@ -220,6 +211,7 @@ namespace Forseti.Commands
 
         [Command("mute")]
         [RequireRole("staff")]
+        [RequireProduction]
         public async Task Mute(SocketGuildUser user)
         {
             if (!user.Roles.Any(r => r.Name == "Muted"))
@@ -234,6 +226,7 @@ namespace Forseti.Commands
 
         [Command("unmute")]
         [RequireRole("staff")]
+        [RequireProduction]
         public async Task Unmute(SocketGuildUser user)
         {
             if (user.Roles.Any(r => r.Name == "Muted"))
@@ -248,6 +241,7 @@ namespace Forseti.Commands
 
         [Command("purge")]
         [RequireRole("staff")]
+        [RequireProduction]
         public async Task Purge(int count)
         {
             var messages = await Context.Channel.GetMessagesAsync(count + 1).FlattenAsync();

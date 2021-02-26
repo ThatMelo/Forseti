@@ -11,8 +11,6 @@ namespace Forseti.Commands
         [Command("Help")]
         public async Task GetHelp()
         {
-            var prefix = "!";
-
             var builder = new EmbedBuilder()
             {
                 Color = new Color(114, 137, 218),
@@ -27,7 +25,7 @@ namespace Forseti.Commands
                     var result = await cmd.CheckPreconditionsAsync(Context);
                     if (result.IsSuccess)
                     {
-                        description += $"{prefix}{cmd.Aliases.First()}\n";
+                        description += $"{Config.Prefix}{cmd.Aliases.First()}\n";
                     }
                 }
 
