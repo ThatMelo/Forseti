@@ -95,7 +95,7 @@ namespace Forseti.Commands
             }
             else if (r.Emote.Name == CardReactions[3].Name)
             {
-                await Resolve("Marked as *mute & Delete* by " + r.User.Value.Mention);
+                await Resolve("Marked as *Mute & Delete* by " + r.User.Value.Mention);
 
                 var url = embed.Fields.First(f => f.Name == "Jump To Post").Value;
                 var i = await GetInfo(url);
@@ -133,17 +133,21 @@ namespace Forseti.Commands
 
             // Strict, auto-delete
             var clearedContent = Regex.Replace(m.Content, "[^a-zA-Z1-9 -_]", string.Empty);
-            foreach (var b in BadWords)
+            var clearedParts = clearedContent.Split(new[] { " ", "-", "_" }, StringSplitOptions.RemoveEmptyEntries);
+            foreach (var b2 in clearedParts)
             {
-                if (clearedContent.Contains(b))
+                foreach (var b in BadWords)
                 {
-                    e.AddField("Flagged", b, true);
-                    e.AddField("Auto-Deleted", "Yes", true);
-                    e.Color = Color.Red;
-                    e.Url = "";
-                    await m.DeleteAsync();
-                    await CreateModCard(e);
-                    return;
+                    if (b2.Equals(b))
+                    {
+                        e.AddField("Flagged", b, true);
+                        e.AddField("Auto-Deleted", "Yes", true);
+                        e.Color = Color.Red;
+                        e.Url = "";
+                        await m.DeleteAsync();
+                        await CreateModCard(e);
+                        return;
+                    }
                 }
             }
 
