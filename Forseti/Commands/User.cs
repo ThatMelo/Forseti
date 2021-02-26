@@ -11,14 +11,15 @@ namespace Forseti.Commands
     {
         public static async Task PostUserInfo(SocketGuildUser usr, SocketTextChannel channel)
         {
-            var roles = usr.Roles.Select(r => r.Name).Where(r => !r.Contains("everyone"));
+            var roles = usr.Roles.Where(r => !r.Name.Contains("everyone")).ToList();
+            roles.Sort((a, b) => a.CompareTo(b));
 
             var e = new EmbedBuilder()
                 .WithTitle(usr.Username + "#" + usr.Discriminator)
                 .AddField("ID", usr.Id, true)
                 .AddField("Joined", usr.JoinedAt, true)
                 .AddField("Account Created", usr.CreatedAt, true)
-                .AddField("Roles", string.Join(", ", roles), true)
+                .AddField("Roles", string.Join(", ", roles.Select(r => r.Name)), true)
                 .WithCurrentTimestamp()
                 .WithThumbnailUrl(usr.GetAvatarUrl());
             await channel.SendMessageAsync(embed: e.Build());
