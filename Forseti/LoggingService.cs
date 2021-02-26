@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.Webhook;
+using Discord.WebSocket;
 
 namespace Forseti
 {
@@ -21,8 +22,11 @@ namespace Forseti
         public async Task Client_Log(LogMessage arg)
         {
             Console.WriteLine(arg);
+
             if (!(arg.Exception is null))
             {
+                if (arg.Exception is GatewayReconnectException) { return; }
+
                 var color = arg.Severity == LogSeverity.Critical ? Color.Red : Color.Orange;
 
                 if (arg.Exception is CommandException ex)
