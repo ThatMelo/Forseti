@@ -39,6 +39,7 @@ namespace Forseti.Commands
                         return;
                     }
                 }
+                await ReplyAsync("No commands found by the name `" + cmd + "`.");
                 return;
             }
 
