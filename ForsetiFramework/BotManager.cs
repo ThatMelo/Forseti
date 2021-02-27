@@ -35,7 +35,7 @@ namespace Forseti
             Commands = new CommandService(new CommandServiceConfig()
             {
                 CaseSensitiveCommands = false,
-                DefaultRunMode = RunMode.Sync,
+                DefaultRunMode = RunMode.Async,
                 IgnoreExtraArgs = true,
                 LogLevel = LogSeverity.Warning,
                 SeparatorChar = ' ',
@@ -67,7 +67,7 @@ namespace Forseti
                     msg.HasMentionPrefix(Client.CurrentUser, ref argPos)) || msg.Author.IsBot) { return; }
                 var context = new SocketCommandContext(Client, msg);
 
-                var tagName = arg.Content[argPos..].Split(' ')[0].ToLower();
+                var tagName = arg.Content.Substring(argPos, arg.Content.Length - argPos).Split(' ')[0].ToLower();
                 var tag = await Tags.GetTag(tagName);
                 if (tag is null) // Normal command handling
                 {
@@ -89,7 +89,7 @@ namespace Forseti
                         if (!(tag.Content is null || tag.Content == string.Empty))
                         {
                             var index = argPos + tagName.Length + (argPos + tagName.Length == msg.Content.Length ? 0 : 1);
-                            var suffix = msg.Content[index..];
+                            var suffix = msg.Content.Substring(index, msg.Content.Length - index);
                             await arg.Channel.SendMessageAsync(tag.Content.Replace("{author}", msg.Author.Mention).Replace("{suffix}", suffix));
                         }
                         if (!(tag.AttachmentURLs is null || tag.AttachmentURLs.Length == 0))
@@ -114,6 +114,7 @@ namespace Forseti
 
         private async Task Client_Ready()
         {
+            if (Config.Debug) { return; }
             var botTesting = Client.GetChannel(814330280969895936) as SocketTextChannel;
             var e = new EmbedBuilder()
                 .WithAuthor(Client.CurrentUser)

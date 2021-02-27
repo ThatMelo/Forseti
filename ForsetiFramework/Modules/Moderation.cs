@@ -61,12 +61,12 @@ namespace Forseti.Commands
                 });
             }
 
-            static async Task<(SocketGuildChannel channel, IMessage message)> GetInfo(string url)
+            async Task<(SocketGuildChannel channel, IMessage message)> GetInfo(string url)
             {
                 var parts = url.Replace(")", "").Split('/');
                 Console.WriteLine(string.Join(" | ", parts));
-                var messageId = ulong.Parse(parts[^1]);
-                var channelId = ulong.Parse(parts[^2]);
+                var messageId = ulong.Parse(parts[parts.Length - 1]);
+                var channelId = ulong.Parse(parts[parts.Length - 2]);
 
                 var channel = BotManager.Instance.Client.GetChannel(channelId) as SocketGuildChannel;
                 var message = await (channel as ITextChannel).GetMessageAsync(messageId);
@@ -103,10 +103,10 @@ namespace Forseti.Commands
                 var url = embed.Fields.First(f => f.Name == "Jump To Post").Value;
                 var (channel, message) = await GetInfo(url);
 
-                if (!usr.Roles.Any(r => r.Name == "Muted"))
+                if (!usr.Roles.Any(r2 => r2.Name == "Muted"))
                 {
-                    await usr.RemoveRoleAsync(channel.Guild.Roles.First(r => r.Name == "Member"));
-                    await usr.AddRoleAsync(channel.Guild.Roles.First(r => r.Name == "Muted"));
+                    await usr.RemoveRoleAsync(channel.Guild.Roles.First(r2 => r2.Name == "Member"));
+                    await usr.AddRoleAsync(channel.Guild.Roles.First(r2 => r2.Name == "Muted"));
                     await usr.SendMessageAsync($"You have been muted by {r.User.Value.Mention}.");
                     await ModLogs.SendMessageAsync($"{usr.Mention} was muted by {r.User.Value.Mention}.");
                 }
@@ -131,7 +131,7 @@ namespace Forseti.Commands
                 .WithColor(Color.Orange)
                 .WithCurrentTimestamp()
                 .AddField("Channel", $"<#{m.Channel.Id}>", true)
-                .AddField("Jump To Post", @$"[Link](https://discord.com/channels/{guild.Id}/{m.Channel.Id}/{m.Id})", true)
+                .AddField("Jump To Post", $@"[Link](https://discord.com/channels/{guild.Id}/{m.Channel.Id}/{m.Id})", true)
                 .AddField("User ID", m.Author.Id, true);
 
             // Strict, auto-delete
@@ -178,6 +178,7 @@ namespace Forseti.Commands
         [Command("kick")]
         [RequireRole("staff")]
         [RequireProduction]
+        [Syntax("kick <user>")]
         public async Task Kick(SocketGuildUser user, [Remainder]string reason = "violating the rules")
         {
             reason = reason.EndsWith(".") ? reason : reason + ".";
@@ -190,6 +191,7 @@ namespace Forseti.Commands
         [Command("ban")]
         [RequireRole("staff")]
         [RequireProduction]
+        [Syntax("ban <user>")]
         public async Task Ban(SocketGuildUser user, [Remainder]string reason = "violating the rules")
         {
             reason = reason.EndsWith(".") ? reason : reason + ".";
@@ -202,6 +204,7 @@ namespace Forseti.Commands
         [Alias("pardon")]
         [RequireRole("staff")]
         [RequireProduction]
+        [Syntax("unban <user>")]
         public async Task Unban(ulong user)
         {
             await Context.Guild.RemoveBanAsync(user);
@@ -212,6 +215,7 @@ namespace Forseti.Commands
         [Command("mute")]
         [RequireRole("staff")]
         [RequireProduction]
+        [Syntax("mute <user>")]
         public async Task Mute(SocketGuildUser user)
         {
             if (!user.Roles.Any(r => r.Name == "Muted"))
@@ -227,6 +231,7 @@ namespace Forseti.Commands
         [Command("unmute")]
         [RequireRole("staff")]
         [RequireProduction]
+        [Syntax("unmute <user>")]
         public async Task Unmute(SocketGuildUser user)
         {
             if (user.Roles.Any(r => r.Name == "Muted"))
@@ -242,6 +247,8 @@ namespace Forseti.Commands
         [Command("purge")]
         [RequireRole("staff")]
         [RequireProduction]
+        [Summary("Purges messages of specified amount in the current channel.")]
+        [Syntax("purge <count>")]
         public async Task Purge(int count)
         {
             var messages = await Context.Channel.GetMessagesAsync(count + 1).FlattenAsync();
