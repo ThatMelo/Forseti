@@ -5,7 +5,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace Forseti.Modules
+namespace ForsetiFramework.Modules
 {
     public class User : ModuleBase<SocketCommandContext>
     {

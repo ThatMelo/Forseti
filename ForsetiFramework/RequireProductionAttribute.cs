@@ -2,7 +2,7 @@
 using System.Threading.Tasks;
 using Discord.Commands;
 
-namespace Forseti
+namespace ForsetiFramework
 {
     public class RequireProductionAttribute : PreconditionAttribute
     {

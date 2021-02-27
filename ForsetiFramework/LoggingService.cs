@@ -6,7 +6,7 @@ using Discord.Commands;
 using Discord.Webhook;
 using Discord.WebSocket;
 
-namespace Forseti
+namespace ForsetiFramework
 {
     public class LoggingService
     {

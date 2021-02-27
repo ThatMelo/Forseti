@@ -3,7 +3,7 @@ using System.Diagnostics;
 using System.IO;
 using Newtonsoft.Json;
 
-namespace Forseti
+namespace ForsetiFramework
 {
     [Serializable]
     public class Config

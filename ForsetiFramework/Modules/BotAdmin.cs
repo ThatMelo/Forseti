@@ -3,8 +3,9 @@ using System.Diagnostics;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
+using ForsetiFramework;
 
-namespace Forseti.Modules
+namespace ForsetiFramework.Modules
 {
     public class BotAdmin : ModuleBase<SocketCommandContext>
     {
@@ -20,7 +21,7 @@ namespace Forseti.Modules
         [Summary("Restarts the bot.")]
         public async Task Restart(bool update = true)
         {
-            await Context.Message.AddReactionAsync(new Emoji("👌"));
+            await this.ReactOk();
             await BotManager.Instance.Client.StopAsync();
             Program.Icon.Visible = false;
 

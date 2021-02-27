@@ -7,7 +7,7 @@ using Discord;
 using Discord.Commands;
 using Newtonsoft.Json;
 
-namespace Forseti.Modules
+namespace ForsetiFramework.Modules
 {
     public class Tags : ModuleBase<SocketCommandContext>
     {
@@ -65,7 +65,7 @@ namespace Forseti.Modules
                 };
                 await SetTag(t);
             }
-            await Context.Message.AddReactionAsync(new Emoji("👌"));
+            await this.ReactOk();
         }
     }
 

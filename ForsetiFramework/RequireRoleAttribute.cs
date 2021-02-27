@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace Forseti
+namespace ForsetiFramework
 {
     public class RequireRoleAttribute : PreconditionAttribute
     {

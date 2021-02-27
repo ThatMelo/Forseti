@@ -48,7 +48,7 @@
     <WarningLevel>4</WarningLevel>
   </PropertyGroup>
   <PropertyGroup>
-    <StartupObject>Forseti.Program</StartupObject>
+    <StartupObject>ForsetiFramework.Program</StartupObject>
   </PropertyGroup>
   <ItemGroup>
     <Reference Include="Discord.Net.Commands, Version=2.3.0.0, Culture=neutral, processorArchitecture=MSIL">
@@ -120,6 +120,7 @@
   <ItemGroup>
     <Compile Include="BotManager.cs" />
     <Compile Include="Config.cs" />
+    <Compile Include="Extensions.cs" />
     <Compile Include="LoggingService.cs" />
     <Compile Include="Modules\BotAdmin.cs" />
     <Compile Include="Modules\Help.cs" />

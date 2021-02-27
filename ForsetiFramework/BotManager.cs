@@ -4,9 +4,9 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
-using Forseti.Modules;
+using ForsetiFramework.Modules;
 
-namespace Forseti
+namespace ForsetiFramework
 {
     public class BotManager
     {
@@ -34,7 +34,7 @@ namespace Forseti
             Commands = new CommandService(new CommandServiceConfig()
             {
                 CaseSensitiveCommands = false,
-                DefaultRunMode = RunMode.Async,
+                DefaultRunMode = RunMode.Sync,
                 IgnoreExtraArgs = true,
                 LogLevel = LogSeverity.Warning,
                 SeparatorChar = ' ',
@@ -76,11 +76,18 @@ namespace Forseti
 
                     var result = await Commands.ExecuteAsync(context, argPos, null);
 
-                    if (result.ErrorReason != null && result.ErrorReason == "Unknown command.")
+                    if (result.ErrorReason != null && 
+                        (result.ErrorReason == "Unknown command." || 
+                        result.ErrorReason.Contains("You must have the role")))
                     {
                         await msg.AddReactionAsync(new Emoji("❓"));
                         await logMessage.DeleteAsync();
                         return;
+                    }
+                    else if (result.ErrorReason != null)
+                    {
+                        await msg.Channel.SendMessageAsync("I've run into an error. I've let staff know.");
+                        await logMessage.DeleteAsync();
                     }
                     await logMessage.ModifyAsync(m2 => m2.Content = result.IsSuccess ? "✅ " + mC : $"❌ " + mC);
                     return;

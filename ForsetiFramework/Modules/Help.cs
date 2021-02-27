@@ -4,10 +4,10 @@ using System.Linq;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
-using Forseti;
-using Forseti.Modules;
+using ForsetiFramework;
+using ForsetiFramework.Modules;
 
-namespace Forseti.Modules
+namespace ForsetiFramework.Modules
 {
     public class Help : ModuleBase<SocketCommandContext>
     {
@@ -35,11 +35,12 @@ namespace Forseti.Modules
                             .AddField("Syntax", syntax)
                             .WithColor(Color.Blue);
 
-                        await ReplyAsync(embed: e.Build());
+                        await this.ReactOk();
+                        await Context.Message.Author.SendMessageAsync(embed: e.Build());
                         return;
                     }
                 }
-                await ReplyAsync("No commands found by the name `" + cmd + "`.");
+                await this.ReactError();
                 return;
             }
 
@@ -96,7 +97,8 @@ namespace Forseti.Modules
 
             foreach (var b in builders)
             {
-                await ReplyAsync(embed: b.Build());
+                await this.ReactOk();
+                await Context.Message.Author.SendMessageAsync(embed: b.Build());
             }
         }
     }

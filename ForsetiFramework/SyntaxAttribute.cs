@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Forseti
+namespace ForsetiFramework
 {
     public class SyntaxAttribute : Attribute
     {
