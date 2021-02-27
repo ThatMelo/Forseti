@@ -72,11 +72,17 @@ namespace Forseti
                 {
                     var commandLog = Client.GetChannel(814970218555768882) as SocketTextChannel;
                     var mC = $"{DateTimeOffset.UtcNow} > {arg.Author.Username}#{arg.Author.Discriminator} > `{arg.Content}` - <#{arg.Channel.Id}>";
-                    var m = await commandLog.SendMessageAsync(mC);
+                    var logMessage = await commandLog.SendMessageAsync(mC);
 
                     var result = await Commands.ExecuteAsync(context, argPos, null);
 
-                    await m.ModifyAsync(m2 => m2.Content = result.IsSuccess ? "✅ " + mC : "❌ " + mC);
+                    if (result.ErrorReason != null && result.ErrorReason == "Unknown command.")
+                    {
+                        await msg.AddReactionAsync(new Emoji("❓"));
+                        await logMessage.DeleteAsync();
+                        return;
+                    }
+                    await logMessage.ModifyAsync(m2 => m2.Content = result.IsSuccess ? "✅ " + mC : $"❌ " + mC);
                     return;
                 }
 
