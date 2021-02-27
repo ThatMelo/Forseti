@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
 
-namespace Forseti.Commands
+namespace Forseti.Modules
 {
     public class BotAdmin : ModuleBase<SocketCommandContext>
     {

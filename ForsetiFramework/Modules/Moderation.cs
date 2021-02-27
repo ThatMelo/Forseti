@@ -7,7 +7,7 @@ using Discord;
 using Discord.Commands;
 using Discord.WebSocket;
 
-namespace Forseti.Commands
+namespace Forseti.Modules
 {
     public class Moderation : ModuleBase<SocketCommandContext>
     {

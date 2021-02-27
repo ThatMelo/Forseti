@@ -7,7 +7,7 @@ using Discord.Commands;
 using Forseti;
 using Forseti.Modules;
 
-namespace Forseti.Commands
+namespace Forseti.Modules
 {
     public class Help : ModuleBase<SocketCommandContext>
     {
