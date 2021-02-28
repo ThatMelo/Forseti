@@ -82,7 +82,6 @@ namespace ForsetiFramework.Modules
                     var syntaxAtt = (SyntaxAttribute)command.Attributes.FirstOrDefault(a => a is SyntaxAttribute);
                     var syntax = syntaxAtt is null ? "" : syntaxAtt.Syntax;
 
-                    Console.WriteLine(command.Summary);
                     var sumString =
                         $"{(command.Aliases.Count > 1 ? "Aliases: `" + string.Join("`, `", command.Aliases.Skip(1)) + "`" : "")}" +
                         $"{(command.Summary == "" ? "" : $"\n{command.Summary}")}";
@@ -91,10 +90,10 @@ namespace ForsetiFramework.Modules
                 }
             }
 
+            await this.ReactOk();
             foreach (var b in builders)
             {
-                await this.ReactOk();
-                await Context.Message.Author.SendMessageAsync(embed: b.Build());
+                _ = Context.Message.Author.SendMessageAsync(embed: b.Build());
             }
         }
     }

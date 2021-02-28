@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Reflection;
 using System.Threading.Tasks;
 using Discord;
@@ -60,18 +61,24 @@ namespace ForsetiFramework
 
         private async Task Commands_CommandExecuted(Optional<CommandInfo> arg1, ICommandContext context, IResult result)
         {
-            // If unknown command or no permission, react with ❓
-            // If other error, respond that there was an error.
-            if (result.ErrorReason != null &&
-                (result.ErrorReason == "Unknown command." ||
-                result.ErrorReason.Contains("You must have the role")))
+
+
+            if (!(result.ErrorReason is null))
             {
-                await context.Message.AddReactionAsync(new Emoji("❓"));
-                return;
-            }
-            else if (result.ErrorReason != null)
-            {
-                await context.Message.Channel.SendMessageAsync("I've run into an error. I've let staff know.");
+                // If unknown command or no permission, react with ❓
+                if (result.ErrorReason == "Unknown command." || result.ErrorReason.Contains("must have the role"))
+                {
+                    await context.Message.AddReactionAsync(new Emoji("❓"));
+                    return;
+                }
+                else if (result.ErrorReason.ToLower().Contains("must be in a guild"))
+                {
+                    await context.Message.Channel.SendMessageAsync(result.ErrorReason);
+                }
+                else if (result.ErrorReason != null)
+                {
+                    await context.Message.Channel.SendMessageAsync("I've run into an error. I've let staff know.");
+                }
             }
 
             // Log that the command was run in #bot-command-log
@@ -97,8 +104,10 @@ namespace ForsetiFramework
             var hasPrefix = msg.HasStringPrefix(Config.Prefix, ref argPos) || msg.HasMentionPrefix(Client.CurrentUser, ref argPos);
             if (!(hasPrefix) || msg.Author.IsBot) { return; }
 
-            var commandNameWithPrefix = arg.Content.Split(' ')[0].ToLower(); // Get first word
-            var commandName = commandNameWithPrefix.Substring(argPos, commandNameWithPrefix.Length - argPos); // Remove prefix
+            (var Prefix, var Remainder) = msg.Content.SplitAt(argPos);
+            var commandName = Remainder.Split(' ')[0];
+            var suffix = string.Join(" ", Remainder.Split(' ').Skip(1));
+
             var tag = await Tags.GetTag(commandName);
             if (tag is null) // Normal command handling
             {
@@ -107,7 +116,6 @@ namespace ForsetiFramework
             }
             else // Tag command handling
             {
-                var suffix = arg.Content.Substring(commandNameWithPrefix.Length, arg.Content.Length - commandNameWithPrefix.Length).Trim();
                 _ = PostTag(tag, arg.Channel, suffix, arg.Author);
             }
         }
