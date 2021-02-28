@@ -127,6 +127,7 @@
     <Compile Include="Modules\Moderation.cs" />
     <Compile Include="Modules\Tags.cs" />
     <Compile Include="Modules\User.cs" />
+    <Compile Include="Modules\Utility.cs" />
     <Compile Include="Program.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="RequireProductionAttribute.cs" />

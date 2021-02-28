@@ -10,8 +10,8 @@ namespace ForsetiFramework
     {
         public static bool Debug => Debugger.IsAttached;
 
-        public static string Path = Debug ? @"C:\ForsetiDebug\" : @"C:\Forseti\";
-        public static string Prefix = Debug ? "$" : "!";
+        public static string Path => Debug ? @"C:\ForsetiDebug\" : @"C:\Forseti\";
+        public static string Prefix => Debug ? "$" : "!";
 
         [JsonProperty("token")]
         public string Token;

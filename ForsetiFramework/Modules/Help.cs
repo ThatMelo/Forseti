@@ -46,29 +46,26 @@ namespace ForsetiFramework.Modules
 
             var builders = new List<EmbedBuilder>();
 
-            var last = false;
-            void checkBuilders(bool commands /*false if tags*/)
+            void checkBuilders(string moduleName)
             {
-                if (builders.Count == 0 || builders.Last().Fields.Count >= 25 || last != commands)
+                if (builders.Count == 0 || builders.Last().Fields.Count >= 25 || builders.Last().Title != moduleName)
                 {
                     builders.Add(new EmbedBuilder()
-                        .WithTitle(commands ? "Commands" : "Tags")
-                        .WithColor(commands ? Color.Blue : Color.Green)
-                        .WithDescription($"These are the {(commands ? "commands" : "tags")} you can run.")
+                        .WithTitle(moduleName)
+                        .WithColor(moduleName != "Tag List" ? Color.Blue : Color.Green)
                         .WithCurrentTimestamp());
-                    last = commands;
                     return;
                 }
             }
 
             foreach (var tag in await Tags.GetTags())
             {
-                checkBuilders(false);
+                checkBuilders("Tag List");
 
                 var content = tag.Content is null ? "" : tag.Content;
-                if (!(tag.Content is null) && tag.Content.Length > 30)
+                if (!(tag.Content is null) && tag.Content.Length > 100)
                 {
-                    content = tag.Content.Substring(0, 30);
+                    content = tag.Content.Substring(0, 100) + "...";
                 }
                 content += $"\n__{tag.AttachmentURLs.Length} attachment{(tag.AttachmentURLs.Length == 1 ? "" : "s")}__";
 
@@ -80,16 +77,15 @@ namespace ForsetiFramework.Modules
                 foreach (var command in module.Commands)
                 {
                     if (!(await command.CheckPreconditionsAsync(Context)).IsSuccess) { continue; }
-                    checkBuilders(true);
+                    checkBuilders(module.Name);
 
                     var syntaxAtt = (SyntaxAttribute)command.Attributes.FirstOrDefault(a => a is SyntaxAttribute);
                     var syntax = syntaxAtt is null ? "" : syntaxAtt.Syntax;
 
                     Console.WriteLine(command.Summary);
-                    var sumString = 
+                    var sumString =
                         $"{(command.Aliases.Count > 1 ? "Aliases: `" + string.Join("`, `", command.Aliases.Skip(1)) + "`" : "")}" +
-                        $"{(command.Summary == "" ? "" : $"\n{command.Summary}")}" +
-                        $"{(syntax == "" ? "" : $"\n`{Config.Prefix}{syntax}`")}";
+                        $"{(command.Summary == "" ? "" : $"\n{command.Summary}")}";
                     sumString = sumString.Trim();
                     builders.Last().AddField(Config.Prefix + command.Name.ToLower(), sumString == string.Empty ? ":)" : sumString, true);
                 }

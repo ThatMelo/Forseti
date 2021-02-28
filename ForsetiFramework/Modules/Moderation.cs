@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text.RegularExpressions;
@@ -35,7 +36,19 @@ namespace ForsetiFramework.Modules
                 };
 
                 BotManager.Instance.Client.ReactionAdded += Client_ReactionAdded;
+                BotManager.Instance.Client.MessagesBulkDeleted += Client_MessagesBulkDeleted;
             }
+        }
+
+        private static async Task Client_MessagesBulkDeleted(IReadOnlyCollection<Cacheable<IMessage, ulong>> arg1, ISocketMessageChannel arg2)
+        {
+            var e = new EmbedBuilder()
+                .WithTitle("Bulk Delete Detected")
+                .WithCurrentTimestamp()
+                .AddField("Count", arg1.Count, true)
+                .AddField("Channel", $"<#{arg2.Id}>", true);
+
+            await ModLogs.SendMessageAsync(embed: e.Build());
         }
 
         private static async Task Client_ReactionAdded(Cacheable<IUserMessage, ulong> cMsg, ISocketMessageChannel ch, SocketReaction r)
@@ -83,23 +96,25 @@ namespace ForsetiFramework.Modules
             }
             else if (r.Emote.Name == CardReactions[2].Name)
             {
-                await Resolve("Marked as *Warn & Delete* by " + r.User.Value.Mention);
-
                 var url = embed.Fields.First(f => f.Name == "Jump To Post").Value;
                 var (channel, message) = await GetInfo(url);
-
-                await usr.SendMessageAsync($"{r.User.Value.Mention} has given you a warning for posting inappropriate language, " +
-                    $"links, or other material.\n```{message.Content}\n``` ({message.Attachments.Count} attachment(s))");
 
                 if (!(message is null))
                 {
                     await message.DeleteAsync();
+                    await Resolve("Marked as *Warn & Delete* by " + r.User.Value.Mention);
+                    await usr.SendMessageAsync($"{r.User.Value.Mention} has given you a warning for posting inappropriate language, " +
+                        $"links, or other material.\n```{message.Content}\n``` ({message.Attachments.Count} attachment(s))");
+                }
+                else // Message was already auto-deleted, so content is unavailable
+                {
+                    await Resolve("Marked as *Warn* by " + r.User.Value.Mention);
+                    await usr.SendMessageAsync($"{r.User.Value.Mention} has given you a warning for posting inappropriate language, " +
+                        $"links, or other material.");
                 }
             }
             else if (r.Emote.Name == CardReactions[3].Name)
             {
-                await Resolve("Marked as *Mute & Delete* by " + r.User.Value.Mention);
-
                 var url = embed.Fields.First(f => f.Name == "Jump To Post").Value;
                 var (channel, message) = await GetInfo(url);
 
@@ -114,6 +129,11 @@ namespace ForsetiFramework.Modules
                 if (!(message is null))
                 {
                     await message.DeleteAsync();
+                    await Resolve("Marked as *Mute & Delete* by " + r.User.Value.Mention);
+                }
+                else
+                {
+                    await Resolve("Marked as *Mute* by " + r.User.Value.Mention);
                 }
             }
         }
@@ -135,7 +155,7 @@ namespace ForsetiFramework.Modules
                 .AddField("User ID", m.Author.Id, true);
 
             // Strict, auto-delete
-            var clearedContent = Regex.Replace(m.Content, "[^a-zA-Z1-9 -_]", string.Empty);
+            var clearedContent = Regex.Replace(m.Content.ToLower(), "[^a-z1-9 -_]", string.Empty);
             var clearedParts = clearedContent.Split(new[] { " ", "-", "_" }, StringSplitOptions.RemoveEmptyEntries);
             foreach (var b2 in clearedParts)
             {

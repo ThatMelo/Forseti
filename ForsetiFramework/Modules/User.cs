@@ -33,5 +33,21 @@ namespace ForsetiFramework.Modules
             usr = usr is null ? Context.Message.Author as SocketGuildUser : usr;
             await PostUserInfo(usr, Context.Channel as SocketTextChannel);
         }
+
+        [Command("avatar")]
+        [Summary("Get a user's avatar.")]
+        [Syntax("avatar [user]")]
+        public async Task Avatar(SocketGuildUser usr = null)
+        {
+            usr = usr is null ? Context.Message.Author as SocketGuildUser : usr;
+            var e = new EmbedBuilder()
+                .WithTitle("Avatar")
+                .WithImageUrl(usr.GetAvatarUrl(ImageFormat.Png, 2048))
+                .WithColor(Color.Green)
+                .WithAuthor(usr)
+                .WithCurrentTimestamp();
+
+            await ReplyAsync(embed: e.Build());
+        }
     }
 }

@@ -11,17 +11,18 @@ namespace ForsetiFramework
     public class BotManager
     {
         public static BotManager Instance;
-        public BotManager() { Instance = this; }
 
-        public Config Config;
-        public DiscordSocketClient Client;
-        public LoggingService Logger;
-        public CommandService Commands;
+        public readonly Config Config;
+        public readonly LoggingService Logger;
+        public readonly DiscordSocketClient Client;
+        public readonly CommandService Commands;
 
-        public async Task Start()
+        public BotManager()
         {
+            Instance = this;
             Config = Config.Load(Config.Path + "config.json");
             Logger = new LoggingService();
+
             Client = new DiscordSocketClient(new DiscordSocketConfig()
             {
                 AlwaysDownloadUsers = true,
@@ -29,12 +30,12 @@ namespace ForsetiFramework
                 LargeThreshold = 250,
                 LogLevel = LogSeverity.Warning,
                 RateLimitPrecision = RateLimitPrecision.Millisecond,
+                ExclusiveBulkDelete = true,
             });
-
             Commands = new CommandService(new CommandServiceConfig()
             {
                 CaseSensitiveCommands = false,
-                DefaultRunMode = RunMode.Sync,
+                DefaultRunMode = RunMode.Async,
                 IgnoreExtraArgs = true,
                 LogLevel = LogSeverity.Warning,
                 SeparatorChar = ' ',
@@ -42,10 +43,14 @@ namespace ForsetiFramework
             });
 
             Commands.Log += Logger.Client_Log;
+            Commands.CommandExecuted += Commands_CommandExecuted;
             Client.Log += Logger.Client_Log;
             Client.MessageReceived += HandleCommands;
             Client.Ready += Client_Ready;
+        }
 
+        public async Task Start()
+        {
             await Commands.AddModulesAsync(Assembly.GetEntryAssembly(), null);
 
             await Client.LoginAsync(TokenType.Bot, Config.Token);
@@ -53,80 +58,63 @@ namespace ForsetiFramework
             await Task.Delay(-1);
         }
 
+        private async Task Commands_CommandExecuted(Optional<CommandInfo> arg1, ICommandContext context, IResult result)
+        {
+            // If unknown command or no permission, react with ❓
+            // If other error, respond that there was an error.
+            if (result.ErrorReason != null &&
+                (result.ErrorReason == "Unknown command." ||
+                result.ErrorReason.Contains("You must have the role")))
+            {
+                await context.Message.AddReactionAsync(new Emoji("❓"));
+                return;
+            }
+            else if (result.ErrorReason != null)
+            {
+                await context.Message.Channel.SendMessageAsync("I've run into an error. I've let staff know.");
+            }
+
+            // Log that the command was run in #bot-command-log
+            var commandLog = Client.GetChannel(814970218555768882) as SocketTextChannel;
+            var msg = context.Message;
+
+            // e.g.
+            // ✅ [2/28/2021 5:37:04 PM +00:00] [GuyInGrey#4066] [#bot-testing]> $ping
+            var toSend = $"{(result.IsSuccess ? "✅" : $"❌")} " +
+                $"[{DateTimeOffset.UtcNow}] " +
+                $"[{msg.Author.Username}#{msg.Author.Discriminator}] " +
+                $"<#{msg.Channel.Id}>> `{msg.Content}`";
+
+            await commandLog.SendMessageAsync(toSend);
+        }
+
         private async Task HandleCommands(SocketMessage arg)
         {
-            try
+            if (!(arg is SocketUserMessage msg)) { return; }
+
+            // Make sure it's prefixed (with ! or bot mention), and that caller isn't a bot
+            var argPos = 0;
+            var hasPrefix = msg.HasStringPrefix(Config.Prefix, ref argPos) || msg.HasMentionPrefix(Client.CurrentUser, ref argPos);
+            if (!(hasPrefix) || msg.Author.IsBot) { return; }
+
+            var commandNameWithPrefix = arg.Content.Split(' ')[0].ToLower(); // Get first word
+            var commandName = commandNameWithPrefix.Substring(argPos, commandNameWithPrefix.Length - argPos); // Remove prefix
+            var tag = await Tags.GetTag(commandName);
+            if (tag is null) // Normal command handling
             {
-                if (!(arg is SocketUserMessage msg)) { return; }
-
-                var argPos = 0;
-
-                // Make sure it's prefixed (with ! or bot mention), and that caller isn't a bot
-                if (!(msg.HasStringPrefix(Config.Prefix, ref argPos) ||
-                    msg.HasMentionPrefix(Client.CurrentUser, ref argPos)) || msg.Author.IsBot) { return; }
                 var context = new SocketCommandContext(Client, msg);
-
-                var tagName = arg.Content.Substring(argPos, arg.Content.Length - argPos).Split(' ')[0].ToLower();
-                var tag = await Tags.GetTag(tagName);
-                if (tag is null) // Normal command handling
-                {
-                    var commandLog = Client.GetChannel(814970218555768882) as SocketTextChannel;
-                    var mC = $"{DateTimeOffset.UtcNow} > {arg.Author.Username}#{arg.Author.Discriminator} > `{arg.Content}` - <#{arg.Channel.Id}>";
-                    var logMessage = await commandLog.SendMessageAsync(mC);
-
-                    var result = await Commands.ExecuteAsync(context, argPos, null);
-
-                    if (result.ErrorReason != null && 
-                        (result.ErrorReason == "Unknown command." || 
-                        result.ErrorReason.Contains("You must have the role")))
-                    {
-                        await msg.AddReactionAsync(new Emoji("❓"));
-                        await logMessage.DeleteAsync();
-                        return;
-                    }
-                    else if (result.ErrorReason != null)
-                    {
-                        await msg.Channel.SendMessageAsync("I've run into an error. I've let staff know.");
-                        await logMessage.DeleteAsync();
-                    }
-                    await logMessage.ModifyAsync(m2 => m2.Content = result.IsSuccess ? "✅ " + mC : $"❌ " + mC);
-                    return;
-                }
-
-                _ = Task.Run(async () =>
-                {
-                    try
-                    {
-                        // Tag command handling
-                        if (!(tag.Content is null || tag.Content == string.Empty))
-                        {
-                            var index = argPos + tagName.Length + (argPos + tagName.Length == msg.Content.Length ? 0 : 1);
-                            var suffix = msg.Content.Substring(index, msg.Content.Length - index);
-                            await arg.Channel.SendMessageAsync(tag.Content.Replace("{author}", msg.Author.Mention).Replace("{suffix}", suffix));
-                        }
-                        if (!(tag.AttachmentURLs is null || tag.AttachmentURLs.Length == 0))
-                        {
-                            foreach (var a in tag.AttachmentURLs)
-                            {
-                                await arg.Channel.SendMessageAsync(a);
-                            }
-                        }
-                    }
-                    catch (Exception e)
-                    {
-                        await Logger.Client_Log(new LogMessage(LogSeverity.Critical, "BotManager's Tag Handler", e.Message, e));
-                    }
-                });
+                await Commands.ExecuteAsync(context, argPos, null);
             }
-            catch (Exception e)
+            else // Tag command handling
             {
-                await Logger.Client_Log(new LogMessage(LogSeverity.Critical, "BotManager's MessageHandler", e.Message, e));
+                var suffix = arg.Content.Substring(commandNameWithPrefix.Length, arg.Content.Length - commandNameWithPrefix.Length).Trim();
+                _ = PostTag(tag, arg.Channel, suffix, arg.Author);
             }
         }
 
         private async Task Client_Ready()
         {
-            if (Config.Debug) { return; }
+            if (Config.Debug) { return; } // Don't post debug ready messages
             var botTesting = Client.GetChannel(814330280969895936) as SocketTextChannel;
             var e = new EmbedBuilder()
                 .WithAuthor(Client.CurrentUser)
@@ -134,6 +122,21 @@ namespace ForsetiFramework
                 .WithCurrentTimestamp()
                 .WithColor(Color.Teal);
             await botTesting.SendMessageAsync(embed: e.Build());
+        }
+
+        private async Task PostTag(Tag tag, ISocketMessageChannel channel, string suffix, SocketUser author)
+        {
+            if (tag.Content != string.Empty)
+            {
+                await channel.SendMessageAsync(tag.Content.Replace("{author}", author.Mention).Replace("{suffix}", suffix));
+            }
+            if (!(tag.AttachmentURLs is null || tag.AttachmentURLs.Length == 0))
+            {
+                foreach (var a in tag.AttachmentURLs)
+                {
+                    await channel.SendMessageAsync(a);
+                }
+            }
         }
     }
 }

@@ -33,16 +33,17 @@ namespace ForsetiFramework.Modules
             // Remove old
             t.ToList().ForEach(t2 => tags.RemoveAll(t3 => t3.Name == t2.Name));
             t.ToList().ForEach(t2 => tags.Add(t2));
-            File.WriteAllText(Config.Path + "tags.json", JsonConvert.SerializeObject(tags.ToArray()));
+            File.WriteAllText(Config.Path + "tags.json", JsonConvert.SerializeObject(tags.ToArray(), Formatting.Indented));
         }
 
-        public static async Task RemoveTag(string name)
+        public static async Task<bool> RemoveTag(string name)
         {
             var tagsArr = await GetTags();
-            if (tagsArr is null) { return; }
+            if (tagsArr is null) { return false; }
             var tags = tagsArr.ToList();
-            tags.RemoveAll(t => t.Name == name);
-            File.WriteAllText(Config.Path + "tags.json", JsonConvert.SerializeObject(tags.ToArray()));
+            var removeCount = tags.RemoveAll(t => t.Name == name);
+            File.WriteAllText(Config.Path + "tags.json", JsonConvert.SerializeObject(tags.ToArray(), Formatting.Indented));
+            return removeCount > 0;
         }
 
         [Command("tag")]
@@ -53,7 +54,11 @@ namespace ForsetiFramework.Modules
         {
             if (con == "" && Context.Message.Attachments.Count == 0)
             {
-                await RemoveTag(name);
+                if (!await RemoveTag(name))
+                {
+                    await this.ReactError();
+                    return;
+                }
             }
             else
             {
