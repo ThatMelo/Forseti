@@ -25,7 +25,9 @@ namespace ForsetiFramework
 
             if (!(arg.Exception is null))
             {
+                // Errors to ignore
                 if (arg.Exception is GatewayReconnectException) { return; }
+                if (arg.Exception.Message.Equals("WebSocket connection was closed")) { return; }
 
                 var color = arg.Severity == LogSeverity.Critical ? Color.Red : Color.Orange;
 

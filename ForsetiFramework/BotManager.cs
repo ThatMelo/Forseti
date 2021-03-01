@@ -87,7 +87,7 @@ namespace ForsetiFramework
 
             // e.g.
             // ✅ [2/28/2021 5:37:04 PM +00:00] [GuyInGrey#4066] [#bot-testing]> $ping
-            var toSend = $"{(result.IsSuccess ? "✅" : $"❌")} " +
+            var toSend = (result.IsSuccess ? "✅ " : "❌ ") +
                 $"[{DateTimeOffset.UtcNow}] " +
                 $"[{msg.Author.Username}#{msg.Author.Discriminator}] " +
                 $"<#{msg.Channel.Id}>> `{msg.Content}`";
