@@ -123,7 +123,6 @@
     <Compile Include="Extensions.cs" />
     <Compile Include="LoggingService.cs" />
     <Compile Include="Modules\BotAdmin.cs" />
-    <Compile Include="Modules\Help.cs" />
     <Compile Include="Modules\Moderation.cs" />
     <Compile Include="Modules\Tags.cs" />
     <Compile Include="Modules\User.cs" />

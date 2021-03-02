@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.Remoting.Contexts;
 using System.Threading.Tasks;
 using Discord;
 using Discord.Commands;
@@ -17,6 +19,7 @@ namespace ForsetiFramework
         public readonly LoggingService Logger;
         public readonly DiscordSocketClient Client;
         public readonly CommandService Commands;
+        public List<(ulong, IDisposable)> TypingStates = new List<(ulong, IDisposable)>();
 
         public BotManager()
         {
@@ -61,23 +64,31 @@ namespace ForsetiFramework
 
         private async Task Commands_CommandExecuted(Optional<CommandInfo> arg1, ICommandContext context, IResult result)
         {
-
+            if (Config.DoTypingStatus)
+            {
+                TypingStates.Where(t => t.Item1 == context.Message.Id).ToList().ForEach(t => t.Item2.Dispose());
+                TypingStates.RemoveAll(t => t.Item1 == context.Message.Id);
+            }
 
             if (!(result.ErrorReason is null))
             {
                 // If unknown command or no permission, react with ❓
-                if (result.ErrorReason == "Unknown command." || result.ErrorReason.Contains("must have the role"))
+                if (result.ErrorReason == "Unknown command." 
+                    || result.ErrorReason.Contains("must have the role")
+                    || result.ErrorReason.Contains("owner of the bot."))
                 {
                     await context.Message.AddReactionAsync(new Emoji("❓"));
                     return;
                 }
-                else if (result.ErrorReason.ToLower().Contains("must be in a guild"))
+                else if (result.ErrorReason.ToLower().Contains("must be in a guild")
+                    || result.ErrorReason.Equals("User not found."))
                 {
                     await context.Message.Channel.SendMessageAsync(result.ErrorReason);
                 }
                 else if (result.ErrorReason != null)
                 {
                     await context.Message.Channel.SendMessageAsync("I've run into an error. I've let staff know.");
+                    //await context.Message.Channel.SendMessageAsync(result.ErrorReason);
                 }
             }
 
@@ -104,13 +115,17 @@ namespace ForsetiFramework
             var hasPrefix = msg.HasStringPrefix(Config.Prefix, ref argPos) || msg.HasMentionPrefix(Client.CurrentUser, ref argPos);
             if (!(hasPrefix) || msg.Author.IsBot) { return; }
 
-            (var Prefix, var Remainder) = msg.Content.SplitAt(argPos);
+            (_, var Remainder) = msg.Content.SplitAt(argPos);
             var commandName = Remainder.Split(' ')[0];
             var suffix = string.Join(" ", Remainder.Split(' ').Skip(1));
 
             var tag = await Tags.GetTag(commandName);
             if (tag is null) // Normal command handling
             {
+                if (Config.DoTypingStatus)
+                {
+                    TypingStates.Add((msg.Id, msg.Channel.EnterTypingState()));
+                }
                 var context = new SocketCommandContext(Client, msg);
                 await Commands.ExecuteAsync(context, argPos, null);
             }

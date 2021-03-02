@@ -13,7 +13,15 @@ namespace ForsetiFramework.Modules
         [Summary("Pong!")]
         public async Task Ping()
         {
-            await ReplyAsync("Pong! " + Context.Client.Latency + "ms");
+            var ping = Context.Client.Latency;
+
+            var e = new EmbedBuilder()
+                .WithTitle("Pong!")
+                .WithDescription(ping + "ms")
+                .WithColor(ping < 200 ? Color.Green : ping < 500 ? Color.LightOrange : Color.Red)
+                .WithCurrentTimestamp();
+
+            await ReplyAsync(embed: e.Build());
         }
 
         [Command("restart")]

@@ -9,7 +9,7 @@ using Newtonsoft.Json;
 
 namespace ForsetiFramework.Modules
 {
-    public class Tags : ModuleBase<SocketCommandContext>
+    public class Tags
     {
         public static async Task<Tag[]> GetTags()
         {
@@ -44,33 +44,6 @@ namespace ForsetiFramework.Modules
             var removeCount = tags.RemoveAll(t => t.Name == name);
             File.WriteAllText(Config.Path + "tags.json", JsonConvert.SerializeObject(tags.ToArray(), Formatting.Indented));
             return removeCount > 0;
-        }
-
-        [Command("tag")]
-        [RequireRole("staff")]
-        [Summary("Sets or deletes tag commands.")]
-        [Syntax("tag <name> [content]")]
-        public async Task Tag(string name, [Remainder]string con = "")
-        {
-            if (con == "" && Context.Message.Attachments.Count == 0)
-            {
-                if (!await RemoveTag(name))
-                {
-                    await this.ReactError();
-                    return;
-                }
-            }
-            else
-            {
-                var t = new Tag()
-                {
-                    Name = name.ToLower(),
-                    Content = con,
-                    AttachmentURLs = Context.Message.Attachments.Select(a => a.Url).ToArray(),
-                };
-                await SetTag(t);
-            }
-            await this.ReactOk();
         }
     }
 
